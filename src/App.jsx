@@ -24,17 +24,38 @@ function App() {
     obtenerDatos();
   }, []);
 
+  // Función para validar que los campos contengan solo letras y espacios
+  const validarTexto = (texto) => /^[a-zA-Z\s]+$/.test(texto);
+
   // Función para guardar datos (registrar un nuevo usuario)
   const guardarDatos = async (e) => {
     e.preventDefault();
-    console.log("Formulario enviado");
     if (!nombre || !apellido) {
       alert("Falta el Nombre o Apellido");
+      return;
+    }
+    if (!validarTexto(nombre) || !validarTexto(apellido)) {
+      alert("El nombre y apellido solo deben contener letras y espacios.");
+      return;
+    }
+    if (nombre.length < 4 || apellido.length < 4) {
+      alert("El nombre y apellido deben tener al menos 4 caracteres.");
       return;
     }
 
     try {
       const db = firebase.firestore();
+      const usuariosExistentes = await db
+        .collection('usuarios')
+        .where('nombre', '==', nombre)
+        .where('apellido', '==', apellido)
+        .get();
+
+      if (!usuariosExistentes.empty) {
+        alert("El usuario ya está registrado.");
+        return;
+      }
+
       const nuevoUsuario = { nombre, apellido };
       const dato = await db.collection('usuarios').add(nuevoUsuario);
       setLista([...lista, { id: dato.id, ...nuevoUsuario }]);
@@ -71,6 +92,10 @@ function App() {
       alert("Falta el Nombre o Apellido");
       return;
     }
+    if (!validarTexto(nombre) || !validarTexto(apellido)) {
+      alert("El nombre y apellido solo deben contener letras y espacios.");
+      return;
+    }
 
     try {
       const db = firebase.firestore();
@@ -82,7 +107,7 @@ function App() {
       setApellido('');
       setId('');
       setModoEdicion(false);
-      setError(null); 
+      setError(null);
     } catch (error) {
       setError("Error al actualizar el usuario.");
       console.log(error);
